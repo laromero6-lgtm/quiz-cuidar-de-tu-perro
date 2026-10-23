@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: El cuidado de tu perro</title>
+    <style>
+        :root {
+            --primary: #4e73df;
+            --primary-hover: #2e59d9;
+            --secondary: #1cc88a;
+            --secondary-hover: #17a673;
+            --danger: #e74a3b;
+            --dark: #2e384d;
+            --gray: #858796;
+            --light-gray: #e3e6f0;
+            --card-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            background-color: #f0f3f8;
+            color: var(--dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-area h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+        .title-area p { font-size: 0.85rem; opacity: 0.9; }
+
+        .sound-wave { display: flex; align-items: flex-end; gap: 2px; height: 16px; visibility: hidden; }
+        .sound-wave.active { visibility: visible; }
+
+        .bar { width: 3px; background-color: #ffffff; animation: bounce 0.5s ease infinite alternate; }
+        .bar:nth-child(1) { height: 60%; animation-delay: 0.1s; }
+        .bar:nth-child(2) { height: 100%; animation-delay: 0.2s; }
+        .bar:nth-child(3) { height: 40%; animation-delay: 0.3s; }
+
+        @keyframes bounce { 0% { height: 30%; } 100% { height: 100%; } }
+
+        .voice-select-container {
+            padding: 8px 25px; background-color: #eaecf4; display: flex;
+            align-items: center; justify-content: space-between; font-size: 0.8rem;
+        }
+
+        .voice-select-container select {
+            padding: 4px 8px; border-radius: 6px; border: 1px solid #d1d3e2;
+            background: white; font-size: 0.8rem; max-width: 250px;
+        }
+
+        .progress-bar-container { width: 100%; height: 6px; background-color: var(--light-gray); }
+        .progress-bar { height: 100%; width: 0%; background-color: var(--secondary); transition: width 0.3s ease; }
+
+        .quiz-body { padding: 25px; }
+
+        .start-box { text-align: center; padding: 30px 10px; }
+        .start-box h2 { font-size: 1.5rem; margin-bottom: 12px; color: var(--dark); }
+        .start-box p { font-size: 0.95rem; color: var(--gray); margin-bottom: 25px; }
+
+        .btn-start {
+            background-color: var(--primary); color: white; border: none; padding: 14px 32px;
+            border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-start:hover { background-color: var(--primary-hover); }
+
+        .meta-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.9rem; color: var(--gray); font-weight: 600; }
+
+        .instruction-banner {
+            background-color: #e8f0fe;
+            border-left: 4px solid var(--primary);
+            padding: 10px 14px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #1a73e8;
+            font-weight: 600;
+        }
+
+        .question-box { margin-bottom: 20px; }
+        .question-text { font-size: 1.15rem; font-weight: 600; color: var(--dark); margin-bottom: 12px; line-height: 1.4; }
+
+        .audio-btn-inline {
+            background-color: var(--primary); color: white; border: none; padding: 8px 16px;
+            border-radius: 20px; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
+        }
+        .audio-btn-inline:hover { background-color: var(--primary-hover); }
+        .audio-btn-inline.played { background-color: #eaecf4; color: var(--dark); }
+
+        .options-grid { display: flex; flex-direction: column; gap: 12px; }
+
+        .option-card {
+            display: flex; align-items: center; gap: 10px;
+            background-color: white; border: 2px solid var(--light-gray);
+            border-radius: 10px; padding: 8px 12px; transition: all 0.2s ease;
+        }
+
+        .option-card.disabled-step {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .option-audio-btn {
+            background-color: #eaecf4; border: none; color: var(--primary);
+            padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+            font-weight: 600; flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+        }
+        .option-audio-btn:hover { background-color: var(--primary); color: white; }
+        .option-audio-btn.played { background-color: var(--secondary); color: white; }
+
+        .option-select-btn {
+            background: none; border: none; text-align: left; font-size: 0.95rem;
+            cursor: pointer; flex-grow: 1; padding: 6px; color: var(--dark);
+            display: flex; align-items: center; width: 100%;
+        }
+
+        .option-select-btn:disabled { cursor: not-allowed; }
+
+        .option-card.correct { background-color: #e6f9f0 !important; border-color: var(--secondary) !important; color: #0e6245 !important; }
+        .option-card.incorrect { background-color: #fdf2f2 !important; border-color: var(--danger) !important; color: #9b1c1c !important; }
+
+        .option-prefix { font-weight: 700; margin-right: 8px; color: var(--primary); }
+
+        .footer-controls { margin-top: 25px; display: flex; justify-content: flex-end; }
+
+        .btn-next {
+            background-color: var(--primary); color: white; border: none; padding: 10px 24px;
+            border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: none;
+        }
+        .btn-next:hover { background-color: var(--primary-hover); }
+
+        .results-box { text-align: center; padding: 20px 10px; }
+        .results-box h2 { font-size: 1.8rem; color: var(--dark); margin-bottom: 10px; }
+
+        .score-circle {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+            color: white; display: flex; flex-direction: column; justify-content: center;
+            align-items: center; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .score-number { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+        .score-total { font-size: 0.8rem; opacity: 0.8; }
+        .results-details { margin: 20px 0; font-size: 1rem; color: var(--gray); }
+
+        .btn-restart {
+            background-color: var(--secondary); color: white; border: none; padding: 12px 30px;
+            border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-restart:hover { background-color: var(--secondary-hover); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="title-area">
+            <h1>El cuidado de tu perro</h1>
+            <p>Prueba de comprensión de lectura</p>
+        </div>
+        <div class="audio-controls-header">
+            <div class="sound-wave" id="soundWave">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="voice-select-container">
+        <label for="voiceSelect">Voz de audio:</label>
+        <select id="voiceSelect"><option value="">Cargando voces en español...</option></select>
+    </div>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="quiz-body">
+        <!-- Start View -->
+        <div id="startView" class="start-box">
+            <h2>¡Bienvenido al Quiz!</h2>
+            <p>Para cada pregunta, primero debes escuchar la pregunta y luego escuchar cada opción de respuesta antes de elegir.</p>
+            <button class="btn-start" id="startBtn">▶ Comenzar Quiz</button>
+        </div>
+
+        <!-- Quiz View -->
+        <div id="quizView" class="hidden">
+            <div class="meta-info">
+                <span id="questionTracker">Pregunta 1 de 5</span>
+                <span id="scoreTracker">Puntaje: 0</span>
+            </div>
+
+            <div class="instruction-banner" id="instructionBanner">
+                Paso 1: Haz clic en "Escuchar pregunta" para comenzar.
+            </div>
+
+            <div class="question-box">
+                <div class="question-text" id="questionText">Cargando...</div>
+                <button class="audio-btn-inline" id="readQuestionBtn">
+                    🔊 1. Escuchar pregunta
+                </button>
+            </div>
+
+            <div class="options-grid" id="optionsContainer"></div>
+
+            <div class="footer-controls">
+                <button class="btn-next" id="nextBtn">Siguiente Pregunta →</button>
+            </div>
+        </div>
+
+        <!-- Results View -->
+        <div id="resultsView" class="hidden">
+            <div class="results-box">
+                <h2>¡Quiz Completado!</h2>
+                <div class="score-circle">
+                    <span class="score-number" id="finalScorePercent">0%</span>
+                    <span class="score-total" id="finalScoreFraction">0/5</span>
+                </div>
+                <div class="results-details" id="resultsFeedback">
+                    ¡Buen trabajo practicando tu lectura!
+                </div>
+                <button class="btn-restart" id="restartBtn">Volver a jugar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            question: "1. ¿Cuál es la idea principal de este libro?",
+            options: [
+                { prefix: "A", text: "Los perros son las mejores mascotas." },
+                { prefix: "B", text: "Los perros necesitan muchas cosas de las personas." },
+                { prefix: "C", text: "Los perros necesitan un lugar cálido para dormir." }
+            ],
+            answer: 1
+        },
+        {
+            question: "2. ¿Cuál es un detalle en este libro?",
+            options: [
+                { prefix: "A", text: "Un perro atrapa una pelota." },
+                { prefix: "B", text: "Un perro necesita ser lavado." },
+                { prefix: "C", text: "A un perro le gusta pasear en auto." }
+            ],
+            answer: 1
+        },
+        {
+            question: "3. Un perro activo encajaría mejor con una familia que:",
+            options: [
+                { prefix: "A", text: "Juega muchos deportes al aire libre." },
+                { prefix: "B", text: "Le gusta pasar mucho tiempo tranquilo adentro." },
+                { prefix: "C", text: "Vive en un espacio con poco lugar para correr." }
+            ],
+            answer: 0
+        },
+        {
+            question: "4. El autor escribió este libro para:",
+            options: [
+                { prefix: "A", text: "Dar información sobre el cuidado de un perro." },
+                { prefix: "B", text: "Contar una historia sobre un perro." },
+                { prefix: "C", text: "Persuadir a las personas de tener un perro." }
+            ],
+            answer: 0
+        },
+        {
+            question: "5. Escucha esta oración: \"Un perro necesita que lo saquen a pasear\". ¿Qué significa la palabra 'necesita' en esta oración?",
+            options: [
+                { prefix: "A", text: "Cosas que uno debe tener obligatoriamente." },
+                { prefix: "B", text: "Cosas que uno hace al aire libre." },
+                { prefix: "C", text: "Cosas que uno usa para jugar." }
+            ],
+            answer: 0
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let questionAudioPlayed = false;
+    let optionsAudioPlayed = [false, false, false];
+    let selectedVoices = [];
+    let currentVoice = null;
+    const synth = window.speechSynthesis;
+
+    const startView = document.getElementById('startView');
+    const startBtn = document.getElementById('startBtn');
+    const quizView = document.getElementById('quizView');
+    const resultsView = document.getElementById('resultsView');
+    const questionTracker = document.getElementById('questionTracker');
+    const scoreTracker = document.getElementById('scoreTracker');
+    const instructionBanner = document.getElementById('instructionBanner');
+    const questionText = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressBar = document.getElementById('progressBar');
+    const readQuestionBtn = document.getElementById('readQuestionBtn');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const soundWave = document.getElementById('soundWave');
+    const finalScorePercent = document.getElementById('finalScorePercent');
+    const finalScoreFraction = document.getElementById('finalScoreFraction');
+    const resultsFeedback = document.getElementById('resultsFeedback');
+    const restartBtn = document.getElementById('restartBtn');
+
+    function populateVoices() {
+        if (!synth) return;
+        const voices = synth.getVoices();
+        const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+        
+        voiceSelect.innerHTML = '';
+
+        if (spanishVoices.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'Voz predeterminada del sistema';
+            voiceSelect.appendChild(opt);
+            return;
+        }
+
+        spanishVoices.sort((a, b) => {
+            const latamLocales = ['es-MX', 'es-419', 'es-US', 'es-CO', 'es-AR', 'es-CL'];
+            const aIsLatam = latamLocales.some(loc => a.lang.includes(loc));
+            const bIsLatam = latamLocales.some(loc => b.lang.includes(loc));
+            if (aIsLatam && !bIsLatam) return -1;
+            if (!aIsLatam && bIsLatam) return 1;
+            return 0;
+        });
+
+        spanishVoices.forEach((voice, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${voice.name} (${voice.lang})`;
+            voiceSelect.appendChild(option);
+        });
+
+        selectedVoices = spanishVoices;
+        currentVoice = spanishVoices[0];
+    }
+
+    if (synth) {
+        populateVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
+    }
+
+    voiceSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val !== '' && selectedVoices[val]) {
+            currentVoice = selectedVoices[val];
+        }
+    });
+
+    function speakText(text, callback) {
+        if (!synth) return;
+        synth.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        if (currentVoice) {
+            utterance.voice = currentVoice;
+            utterance.lang = currentVoice.lang;
+        } else {
+            utterance.lang = 'es-MX';
+        }
+
+        utterance.rate = 0.9;
+
+        utterance.onstart = () => { soundWave.classList.add('active'); };
+        utterance.onend = () => {
+            soundWave.classList.remove('active');
+            if (callback) callback();
+        };
+        utterance.onerror = () => { soundWave.classList.remove('active'); };
+
+        synth.speak(utterance);
+    }
+
+    startBtn.addEventListener('click', () => {
+        startView.classList.add('hidden');
+        quizView.classList.remove('hidden');
+        loadQuestion();
+    });
+
+    function loadQuestion() {
+        const qData = quizData[currentQuestionIndex];
+
+        questionAudioPlayed = false;
+        optionsAudioPlayed = [false, false, false];
+
+        questionTracker.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+        scoreTracker.textContent = `Puntaje: ${score}`;
+        progressBar.style.width = `${((currentQuestionIndex) / quizData.length) * 100}%`;
+
+        instructionBanner.textContent = "Paso 1: Haz clic en '1. Escuchar pregunta' para comenzar.";
+        questionText.textContent = qData.question;
+
+        readQuestionBtn.classList.remove('played');
+        readQuestionBtn.innerHTML = "🔊 1. Escuchar pregunta";
+
+        optionsContainer.innerHTML = '';
+        qData.options.forEach((opt, idx) => {
+            const card = document.createElement('div');
+            card.className = 'option-card disabled-step';
+            card.id = `optionCard_${idx}`;
+
+            const audioBtn = document.createElement('button');
+            audioBtn.className = 'option-audio-btn';
+            audioBtn.id = `audioBtn_${idx}`;
+            audioBtn.innerHTML = `🔊 Escuchar`;
+            audioBtn.onclick = (e) => {
+                e.stopPropagation();
+                playOptionAudio(idx);
+            };
+
+            const selectBtn = document.createElement('button');
+            selectBtn.className = 'option-select-btn';
+            selectBtn.id = `selectBtn_${idx}`;
+            selectBtn.disabled = true;
+            selectBtn.innerHTML = `<span class="option-prefix">${opt.prefix}.</span> <span>${opt.text}</span>`;
+            selectBtn.onclick = () => selectOption(idx);
+
+            card.appendChild(audioBtn);
+            card.appendChild(selectBtn);
+            optionsContainer.appendChild(card);
+        });
+
+        nextBtn.style.display = 'none';
+    }
+
+    readQuestionBtn.addEventListener('click', () => {
+        const qData = quizData[currentQuestionIndex];
+        speakText(qData.question, () => {
+            questionAudioPlayed = true;
+            readQuestionBtn.classList.add('played');
+            instructionBanner.textContent = "Paso 2: Haz clic en 'Escuchar' en cada opción para oírla.";
+
+            qData.options.forEach((_, idx) => {
+                const card = document.getElementById(`optionCard_${idx}`);
+                if (card) card.classList.remove('disabled-step');
+            });
+        });
+    });
+
+    function playOptionAudio(idx) {
+        if (!questionAudioPlayed) return;
+
+        const qData = quizData[currentQuestionIndex];
+        const opt = qData.options[idx];
+
+        speakText(`Opción ${opt.prefix}: ${opt.text}`, () => {
+            optionsAudioPlayed[idx] = true;
+            const audioBtn = document.getElementById(`audioBtn_${idx}`);
+            const selectBtn = document.getElementById(`selectBtn_${idx}`);
+
+            if (audioBtn) {
+                audioBtn.classList.add('played');
+                audioBtn.innerHTML = `✓ Escuchado`;
+            }
+            if (selectBtn) {
+                selectBtn.disabled = false;
+            }
+
+            instructionBanner.textContent = "Paso 3: ¡Ya escuchaste la opción! Haz clic en el texto para responderla cuando estés listo.";
+        });
+    }
+
+    function selectOption(selectedIndex) {
+        if (!questionAudioPlayed || !optionsAudioPlayed[selectedIndex]) return;
+
+        const qData = quizData[currentQuestionIndex];
+        const cards = optionsContainer.querySelectorAll('.option-card');
+
+        cards.forEach((card, idx) => {
+            const selectBtn = card.querySelector('.option-select-btn');
+            const audioBtn = card.querySelector('.option-audio-btn');
+            if (selectBtn) selectBtn.disabled = true;
+            if (audioBtn) audioBtn.disabled = true;
+        });
+
+        if (selectedIndex === qData.answer) {
+            cards[selectedIndex].classList.add('correct');
+            score += 100;
+            scoreTracker.textContent = `Puntaje: ${score}`;
+            speakText("¡Correcto!");
+        } else {
+            cards[selectedIndex].classList.add('incorrect');
+            cards[qData.answer].classList.add('correct');
+            speakText("Incorrecto.");
+        }
+
+        if (currentQuestionIndex < quizData.length - 1) {
+            nextBtn.style.display = 'block';
+        } else {
+            nextBtn.textContent = 'Ver Resultados →';
+            nextBtn.style.display = 'block';
+        }
+    }
+
+    nextBtn.addEventListener('click', () => {
+        synth.cancel();
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    });
+
+    function showResults() {
+        quizView.classList.add('hidden');
+        resultsView.classList.remove('hidden');
+        progressBar.style.width = '100%';
+
+        const correctCount = score / 100;
+        const percentage = Math.round((correctCount / quizData.length) * 100);
+
+        finalScorePercent.textContent = `${percentage}%`;
+        finalScoreFraction.textContent = `${correctCount}/${quizData.length}`;
+
+        let feedback = "";
+        if (percentage === 100) {
+            feedback = "¡Excelente trabajo! Has respondido todas las preguntas correctamente.";
+        } else if (percentage >= 60) {
+            feedback = "¡Buen trabajo! Tienes un buen entendimiento de la lectura.";
+        } else {
+            feedback = "Sigue practicando tu lectura para mejorar tus resultados.";
+        }
+
+        resultsFeedback.textContent = feedback;
+        speakText(`Quiz completado. Obtuviste ${correctCount} de ${quizData.length} respuestas correctas. ${feedback}`);
+    }
+
+    restartBtn.addEventListener('click', () => {
+        synth.cancel();
+        currentQuestionIndex = 0;
+        score = 0;
+        resultsView.classList.add('hidden');
+        quizView.classList.remove('hidden');
+        loadQuestion();
+    });
+</script>
+
+</body>
+</html>
